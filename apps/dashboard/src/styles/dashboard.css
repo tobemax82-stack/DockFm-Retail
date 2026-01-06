@@ -1,0 +1,195 @@
+@import '@dockfm/ui/src/styles/globals.css';
+
+/* Dashboard specific styles */
+.dashboard-layout {
+  @apply min-h-screen bg-surface-950;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Sidebar */
+.sidebar {
+  @apply fixed left-0 top-0 bottom-0 w-64 bg-surface-900/50 backdrop-blur-xl border-r border-surface-800/50;
+  @apply flex flex-col z-40;
+}
+
+.sidebar-collapsed {
+  @apply w-20;
+}
+
+.sidebar-nav-item {
+  @apply flex items-center gap-3 px-4 py-3 mx-3 rounded-xl text-surface-400 
+         transition-all duration-200 hover:text-surface-100 hover:bg-surface-800/50;
+}
+
+.sidebar-nav-item.active {
+  @apply text-surface-100 bg-brand-500/20 border border-brand-500/30;
+}
+
+.sidebar-nav-item.active .nav-icon {
+  @apply text-brand-400;
+}
+
+/* Main content */
+.main-content {
+  @apply ml-64 min-h-screen;
+}
+
+.main-content-collapsed {
+  @apply ml-20;
+}
+
+/* Page header */
+.page-header {
+  @apply sticky top-0 z-30 px-8 py-6 bg-surface-950/80 backdrop-blur-xl border-b border-surface-800/50;
+}
+
+/* Stats cards */
+.stat-card {
+  @apply relative overflow-hidden;
+}
+
+.stat-card::before {
+  content: '';
+  @apply absolute top-0 right-0 w-32 h-32 rounded-full opacity-10;
+  background: radial-gradient(circle, currentColor, transparent);
+  transform: translate(30%, -30%);
+}
+
+/* Table styles */
+.data-table {
+  @apply w-full;
+}
+
+.data-table thead {
+  @apply border-b border-surface-800;
+}
+
+.data-table th {
+  @apply px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider;
+}
+
+.data-table tbody tr {
+  @apply border-b border-surface-800/50 transition-colors hover:bg-surface-800/30;
+}
+
+.data-table td {
+  @apply px-4 py-4 text-sm text-surface-300;
+}
+
+/* Chart container */
+.chart-container {
+  @apply relative h-64;
+}
+
+/* Store card */
+.store-card {
+  @apply relative p-4 rounded-2xl bg-surface-900/50 backdrop-blur-xl border border-surface-800/50
+         transition-all duration-300 hover:bg-surface-800/50 hover:border-surface-700;
+}
+
+.store-card-online {
+  @apply border-l-4 border-l-success-500;
+}
+
+.store-card-offline {
+  @apply border-l-4 border-l-surface-600;
+}
+
+.store-card-warning {
+  @apply border-l-4 border-l-warning-500;
+}
+
+/* Announcement card */
+.announcement-card {
+  @apply flex items-center gap-4 p-4 rounded-xl bg-surface-800/30 border border-surface-700/50
+         transition-all duration-200 hover:bg-surface-800/50 cursor-pointer;
+}
+
+/* Playlist item */
+.playlist-item {
+  @apply flex items-center gap-3 p-3 rounded-xl transition-all duration-200
+         hover:bg-surface-800/50 cursor-pointer group;
+}
+
+.playlist-item-playing {
+  @apply bg-brand-500/10 border border-brand-500/20;
+}
+
+/* Dropdown animation */
+.dropdown-content {
+  @apply origin-top-right;
+  animation: dropdownOpen 0.15s ease-out;
+}
+
+@keyframes dropdownOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Tab styles */
+.tab-list {
+  @apply flex gap-1 p-1 rounded-xl bg-surface-800/50;
+}
+
+.tab-item {
+  @apply px-4 py-2 rounded-lg text-sm font-medium text-surface-400 transition-all
+         hover:text-surface-200;
+}
+
+.tab-item.active {
+  @apply bg-surface-700/50 text-surface-100;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply animate-pulse bg-surface-800 rounded;
+}
+
+/* Drag and drop */
+.dragging {
+  @apply opacity-50 scale-95;
+}
+
+.drop-zone {
+  @apply border-2 border-dashed border-surface-700 rounded-xl transition-colors;
+}
+
+.drop-zone.active {
+  @apply border-brand-500 bg-brand-500/10;
+}
+
+/* Toast notifications */
+.toast-container {
+  @apply fixed bottom-6 right-6 z-50 flex flex-col gap-3;
+}
+
+.toast {
+  @apply flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg backdrop-blur-xl
+         animate-slide-up;
+}
+
+.toast-success {
+  @apply bg-success-500/20 border border-success-500/30 text-success-400;
+}
+
+.toast-error {
+  @apply bg-error-500/20 border border-error-500/30 text-error-400;
+}
+
+.toast-warning {
+  @apply bg-warning-500/20 border border-warning-500/30 text-warning-400;
+}
+
+.toast-info {
+  @apply bg-brand-500/20 border border-brand-500/30 text-brand-400;
+}
