@@ -14,7 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
-import { Logo, cn } from '@dockfm/ui'
+import { TextLogo, cn } from '@dockfm/ui'
 
 interface SidebarProps {
   collapsed: boolean
@@ -48,7 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     >
       {/* Logo */}
       <div className="flex items-center justify-between p-4 border-b border-surface-800/50">
-        <Logo size="sm" showText={!collapsed} />
+        <TextLogo size="sm" showRetail={!collapsed} />
         <button
           onClick={onToggle}
           className="p-2 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800/50 transition-colors"

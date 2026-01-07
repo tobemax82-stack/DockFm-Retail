@@ -1,0 +1,491 @@
+// ============================================
+// DOCKFM RETAIL - DATABASE SCHEMA
+// Multi-tenant architecture with PostgreSQL
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTHENTICATION & USERS
+// ============================================
+
+model User {
+  id             String       @id @default(uuid())
+  email          String       @unique
+  passwordHash   String
+  name           String
+  role           UserRole     @default(OPERATOR)
+  avatar         String?
+  isActive       Boolean      @default(true)
+  lastLoginAt    DateTime?
+  
+  // Relations
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Manager can access specific stores
+  managedStores  StoreManager[]
+  
+  // Activity logs
+  activityLogs   ActivityLog[]
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+enum UserRole {
+  SUPER_ADMIN  // Platform admin (us)
+  ADMIN        // Organization admin
+  MANAGER      // Store manager
+  OPERATOR     // Store operator (play/stop only)
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ============================================
+// ORGANIZATION (TENANT)
+// ============================================
+
+model Organization {
+  id              String            @id @default(uuid())
+  name            String
+  slug            String            @unique
+  sector          BusinessSector    @default(OTHER)
+  logo            String?
+  primaryColor    String?           @default("#6366f1")
+  musicLicense    MusicLicenseType  @default(ROYALTY_FREE)
+  hasSIAE         Boolean           @default(false)
+  plan            PlanType          @default(SOLO)
+  maxStores       Int               @default(1)
+  isActive        Boolean           @default(true)
+  
+  // Settings JSON
+  settings        Json              @default("{}")
+  
+  // Relations
+  users           User[]
+  stores          Store[]
+  playlists       Playlist[]
+  announcements   Announcement[]
+  scheduleRules   ScheduleRule[]
+  cartwallItems   CartwallItem[]
+  aiGenerations   AIGeneration[]
+  
+  // Billing
+  stripeCustomerId String?
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([slug])
+}
+
+enum BusinessSector {
+  CAFE
+  BOUTIQUE
+  GYM
+  RESTAURANT
+  PHARMACY
+  SUPERMARKET
+  HOTEL
+  SPA
+  OTHER
+}
+
+enum MusicLicenseType {
+  ROYALTY_FREE
+  COMMERCIAL
+}
+
+enum PlanType {
+  SOLO
+  CHAIN
+  ENTERPRISE
+}
+
+// ============================================
+// STORES
+// ============================================
+
+model Store {
+  id              String       @id @default(uuid())
+  name            String
+  address         String?
+  city            String?
+  timezone        String       @default("Europe/Rome")
+  activationCode  String       @unique
+  status          StoreStatus  @default(OFFLINE)
+  lastSeenAt      DateTime?
+  
+  // Settings JSON
+  settings        Json         @default("{}")
+  
+  // Schedule JSON (opening hours)
+  schedule        Json         @default("{}")
+  
+  // Relations
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  managers        StoreManager[]
+  playerStates    PlayerState[]
+  playbackLogs    PlaybackLog[]
+  scheduleRules   ScheduleRule[]
+  cartwallItems   CartwallItem[]
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([activationCode])
+  @@index([status])
+}
+
+enum StoreStatus {
+  ONLINE
+  OFFLINE
+  WARNING
+  ERROR
+}
+
+model StoreManager {
+  id        String   @id @default(uuid())
+  userId    String
+  storeId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, storeId])
+}
+
+// ============================================
+// PLAYER STATE (Real-time)
+// ============================================
+
+model PlayerState {
+  id            String    @id @default(uuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  isPlaying     Boolean   @default(false)
+  currentTrackId String?
+  currentTrack  Track?    @relation(fields: [currentTrackId], references: [id])
+  currentTime   Int       @default(0)  // seconds
+  volume        Int       @default(70)
+  isMuted       Boolean   @default(false)
+  mood          String?
+  
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([storeId])
+  @@index([storeId])
+}
+
+// ============================================
+// MUSIC & TRACKS
+// ============================================
+
+model Track {
+  id              String        @id @default(uuid())
+  title           String
+  artist          String?
+  album           String?
+  duration        Int           // seconds
+  url             String
+  mood            MoodType?
+  bpm             Int?
+  isAI            Boolean       @default(false)
+  isAnnouncement  Boolean       @default(false)
+  
+  // Global track (null) or organization-specific
+  organizationId  String?
+  
+  // Relations
+  playlists       PlaylistTrack[]
+  playerStates    PlayerState[]
+  playbackLogs    PlaybackLog[]
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([organizationId])
+  @@index([mood])
+  @@index([isAI])
+}
+
+enum MoodType {
+  MORNING_ACOUSTIC
+  SOFT_JAZZ
+  LOUNGE
+  ENERGY
+  POP_HITS
+  AMBIENT
+  ITALIAN
+  CHILL
+  CUSTOM
+}
+
+model Playlist {
+  id              String          @id @default(uuid())
+  name            String
+  description     String?
+  mood            MoodType?
+  duration        Int             @default(0)  // total seconds
+  isAI            Boolean         @default(false)
+  isDefault       Boolean         @default(false)
+  coverUrl        String?
+  
+  // Relations
+  organizationId  String
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  tracks          PlaylistTrack[]
+  scheduleRules   ScheduleRule[]
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([organizationId])
+  @@index([mood])
+}
+
+model PlaylistTrack {
+  id          String   @id @default(uuid())
+  playlistId  String
+  trackId     String
+  order       Int
+  playlist    Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track       Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, trackId])
+  @@index([playlistId])
+}
+
+// ============================================
+// ANNOUNCEMENTS
+// ============================================
+
+model Announcement {
+  id              String              @id @default(uuid())
+  name            String
+  type            AnnouncementType    @default(CUSTOM)
+  text            String              // Text for AI generation
+  audioUrl        String?             // Pre-recorded or AI-generated
+  voiceId         String?             // AI voice ID
+  duration        Int                 @default(0)
+  status          AnnouncementStatus  @default(DRAFT)
+  priority        Int                 @default(5)  // 1-10
+  
+  // Relations
+  organizationId  String
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  scheduleRules   ScheduleRule[]
+  cartwallItems   CartwallItem[]
+  playbackLogs    PlaybackLog[]
+  
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([type])
+}
+
+enum AnnouncementType {
+  PROMO
+  INFO
+  CLOSING
+  EMERGENCY
+  WEATHER
+  CUSTOM
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  ACTIVE
+  SCHEDULED
+  EXPIRED
+}
+
+// ============================================
+// SCHEDULER
+// ============================================
+
+model ScheduleRule {
+  id              String        @id @default(uuid())
+  name            String
+  type            ScheduleType
+  isActive        Boolean       @default(true)
+  priority        Int           @default(5)
+  
+  // Schedule configuration JSON
+  schedule        Json          // { type, time, days, date, interval }
+  
+  // Target (one of these)
+  playlistId      String?
+  playlist        Playlist?     @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  
+  announcementId  String?
+  announcement    Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  
+  moodTarget      MoodType?
+  
+  // Scope
+  organizationId  String
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Specific stores or all
+  stores          Store[]
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+enum ScheduleType {
+  PLAYLIST
+  ANNOUNCEMENT
+  MOOD
+}
+
+// ============================================
+// CARTWALL
+// ============================================
+
+model CartwallItem {
+  id              String       @id @default(uuid())
+  label           String
+  shortcut        String?      // '1', '2', etc.
+  color           String       @default("brand")
+  order           Int          @default(0)
+  
+  // Relations
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Specific store or all
+  storeId         String?
+  store           Store?       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  announcementId  String
+  announcement    Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([storeId])
+}
+
+// ============================================
+// AI GENERATION
+// ============================================
+
+model AIGeneration {
+  id              String              @id @default(uuid())
+  type            AIGenerationType
+  status          AIGenerationStatus  @default(PENDING)
+  
+  // Input
+  inputText       String?
+  inputMood       String?
+  voiceId         String?
+  language        String              @default("it")
+  targetDuration  Int?                // seconds
+  
+  // Output
+  audioUrl        String?
+  duration        Int?
+  
+  // Error
+  error           String?
+  
+  // Relations
+  organizationId  String
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime            @default(now())
+  completedAt     DateTime?
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+enum AIGenerationType {
+  ANNOUNCEMENT
+  JINGLE
+  PROMO
+  MUSIC
+}
+
+enum AIGenerationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ============================================
+// ANALYTICS & LOGS
+// ============================================
+
+model PlaybackLog {
+  id              String        @id @default(uuid())
+  storeId         String
+  store           Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  trackId         String?
+  track           Track?        @relation(fields: [trackId], references: [id])
+  
+  announcementId  String?
+  announcement    Announcement? @relation(fields: [announcementId], references: [id])
+  
+  playedAt        DateTime      @default(now())
+  duration        Int           // seconds actually played
+  completed       Boolean       @default(false)
+
+  @@index([storeId])
+  @@index([playedAt])
+  @@index([trackId])
+  @@index([announcementId])
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String
+  resource    String
+  resourceId  String?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+}

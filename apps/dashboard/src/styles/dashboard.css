@@ -1,4 +1,4 @@
-@import '@dockfm/ui/src/styles/globals.css';
+@import '../../../../packages/ui/src/styles/globals.css';
 
 /* Dashboard specific styles */
 .dashboard-layout {
@@ -112,7 +112,7 @@
 /* Playlist item */
 .playlist-item {
   @apply flex items-center gap-3 p-3 rounded-xl transition-all duration-200
-         hover:bg-surface-800/50 cursor-pointer group;
+         hover:bg-surface-800/50 cursor-pointer;
 }
 
 .playlist-item-playing {

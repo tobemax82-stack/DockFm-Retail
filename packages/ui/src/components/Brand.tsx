@@ -9,11 +9,55 @@ interface LogoProps {
   className?: string
 }
 
+interface TextLogoProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+  showRetail?: boolean
+  className?: string
+}
+
 const sizeMap = {
   sm: { icon: 24, text: 'text-lg' },
   md: { icon: 32, text: 'text-xl' },
   lg: { icon: 48, text: 'text-2xl' },
   xl: { icon: 64, text: 'text-4xl' },
+}
+
+const textSizeMap = {
+  sm: { main: 'text-xl', retail: 'text-[10px]', gap: 'gap-0.5' },
+  md: { main: 'text-2xl', retail: 'text-xs', gap: 'gap-1' },
+  lg: { main: 'text-3xl', retail: 'text-sm', gap: 'gap-1' },
+  xl: { main: 'text-5xl', retail: 'text-base', gap: 'gap-2' },
+}
+
+// ✨ New Text-based Logo Component
+export const TextLogo: React.FC<TextLogoProps> = ({
+  size = 'md',
+  showRetail = true,
+  className,
+}) => {
+  const { main, retail, gap } = textSizeMap[size]
+
+  return (
+    <div className={cn('flex flex-col', gap, className)}>
+      {/* DockFm text */}
+      <div className={cn(main, 'font-light tracking-tight leading-none')}>
+        <span className="text-white">Dock</span>
+        <span className="text-red-500 font-normal">Fm</span>
+      </div>
+      
+      {/* Retail subtitle */}
+      {showRetail && (
+        <span 
+          className={cn(
+            retail,
+            'text-cyan-400/80 font-medium tracking-[0.3em] uppercase ml-0.5'
+          )}
+        >
+          Retail
+        </span>
+      )}
+    </div>
+  )
 }
 
 export const Logo: React.FC<LogoProps> = ({

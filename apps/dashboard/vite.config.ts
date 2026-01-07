@@ -8,6 +8,7 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src'),
       '@dockfm/ui': resolve(__dirname, '../../packages/ui/src'),
+      '@dockfm/ui/styles': resolve(__dirname, '../../packages/ui/src/styles/globals.css'),
     },
   },
   css: {
@@ -19,10 +20,10 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 5000,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: 'http://localhost:5001',
         changeOrigin: true,
       },
     },

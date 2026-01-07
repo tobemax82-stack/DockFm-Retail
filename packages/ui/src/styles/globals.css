@@ -27,7 +27,7 @@
   }
 
   * {
-    @apply border-border;
+    @apply border-surface-700;
   }
 
   html {
